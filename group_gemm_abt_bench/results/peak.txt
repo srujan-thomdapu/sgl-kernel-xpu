@@ -1,0 +1,66 @@
+
+### compute-bound shapes (tile=large)
+  [bf16]           1x  2048^3  groups= 1    0.3037 ms     56.6 TFLOP/s (  47% peak)     82.9 GB/s (  18% peak)
+  [bf16]           1x  4096^3  groups= 1    1.5681 ms     87.6 TFLOP/s (  73% peak)     64.2 GB/s (  14% peak)
+  [bf16]           1x  8192^3  groups= 1   17.3584 ms     63.3 TFLOP/s (  53% peak)     23.2 GB/s (   5% peak)
+  [bf16]           4x  4096^3  groups= 4    6.1523 ms     89.4 TFLOP/s (  74% peak)     65.4 GB/s (  14% peak)
+  [bf16]           8x  4096^3  groups= 8   12.3273 ms     89.2 TFLOP/s (  74% peak)     65.3 GB/s (  14% peak)
+  [bf16]           16x 2048^3  groups=16    2.9778 ms     92.3 TFLOP/s (  77% peak)    135.2 GB/s (  30% peak)
+  [bf16]           8x  8192^3  groups= 8  137.9720 ms     63.8 TFLOP/s (  53% peak)     23.3 GB/s (   5% peak)
+  [fp16]           1x  2048^3  groups= 1    0.2098 ms     81.9 TFLOP/s (  68% peak)    120.0 GB/s (  26% peak)
+  [fp16]           1x  4096^3  groups= 1    1.4852 ms     92.5 TFLOP/s (  77% peak)     67.8 GB/s (  15% peak)
+  [fp16]           1x  8192^3  groups= 1   16.0909 ms     68.3 TFLOP/s (  57% peak)     25.0 GB/s (   5% peak)
+  [fp16]           4x  4096^3  groups= 4    6.1322 ms     89.7 TFLOP/s (  75% peak)     65.7 GB/s (  14% peak)
+  [fp16]           8x  4096^3  groups= 8   12.3899 ms     88.7 TFLOP/s (  74% peak)     65.0 GB/s (  14% peak)
+  [fp16]           16x 2048^3  groups=16    3.0374 ms     90.5 TFLOP/s (  75% peak)    132.6 GB/s (  29% peak)
+  [fp16]           8x  8192^3  groups= 8  127.4570 ms     69.0 TFLOP/s (  58% peak)     25.3 GB/s (   6% peak)
+
+### bandwidth-bound shapes (tile=large)
+  [bf16] wr 1x 16384x16384x128  groups= 1    3.0608 ms     22.5 TFLOP/s (  19% peak)    178.1 GB/s (  39% peak)
+  [bf16] wr 8x  8192x 8192x 64  groups= 8    6.3074 ms     10.9 TFLOP/s (   9% peak)    172.9 GB/s (  38% peak)
+  [bf16] wr 16x 8192x 8192x 32  groups=16   12.2812 ms      5.6 TFLOP/s (   5% peak)    176.2 GB/s (  39% peak)
+  [bf16] st 8x  8192x 1024x4096  groups= 8    5.7261 ms     96.0 TFLOP/s (  80% peak)    128.9 GB/s (  28% peak)
+  [bf16] st 16x 8192x  512x4096  groups=16    5.9422 ms     92.5 TFLOP/s (  77% peak)    214.6 GB/s (  47% peak)
+  [bf16] st 32x 4096x  256x4096  groups=32    3.4945 ms     78.7 TFLOP/s (  66% peak)    345.7 GB/s (  76% peak)
+  [fp16] wr 1x 16384x16384x128  groups= 1    3.2256 ms     21.3 TFLOP/s (  18% peak)    169.0 GB/s (  37% peak)
+  [fp16] wr 8x  8192x 8192x 64  groups= 8    6.2699 ms     11.0 TFLOP/s (   9% peak)    173.9 GB/s (  38% peak)
+  [fp16] wr 16x 8192x 8192x 32  groups=16   12.6618 ms      5.4 TFLOP/s (   5% peak)    170.9 GB/s (  37% peak)
+  [fp16] st 8x  8192x 1024x4096  groups= 8    5.6056 ms     98.1 TFLOP/s (  82% peak)    131.7 GB/s (  29% peak)
+  [fp16] st 16x 8192x  512x4096  groups=16    5.7602 ms     95.4 TFLOP/s (  80% peak)    221.4 GB/s (  49% peak)
+  [fp16] st 32x 4096x  256x4096  groups=32    3.3727 ms     81.5 TFLOP/s (  68% peak)    358.2 GB/s (  79% peak)
+
+========================================================================================================================
+Group-GEMM max capacity (Intel Arc B580 / BMG-g21)
+peaks: compute ~120 TFLOP/s (bf16/fp16 XMX), memory 456 GB/s
+========================================================================================================================
+         family                  shape dtype  groups  gemm_ms  tflops  pct_compute_peak   gbs  pct_mem_peak  total_bytes_mb
+  compute-bound             1x  2048^3  bf16       1   0.3037    56.6              47.1  82.9          18.2            25.2
+  compute-bound             1x  4096^3  bf16       1   1.5681    87.6              73.0  64.2          14.1           100.7
+  compute-bound             1x  8192^3  bf16       1  17.3584    63.3              52.8  23.2           5.1           402.7
+  compute-bound             4x  4096^3  bf16       4   6.1523    89.4              74.5  65.4          14.4           402.7
+  compute-bound             8x  4096^3  bf16       8  12.3273    89.2              74.3  65.3          14.3           805.3
+  compute-bound             16x 2048^3  bf16      16   2.9778    92.3              76.9 135.2          29.7           402.7
+  compute-bound             8x  8192^3  bf16       8 137.9720    63.8              53.1  23.3           5.1          3221.2
+  compute-bound             1x  2048^3  fp16       1   0.2098    81.9              68.2 120.0          26.3            25.2
+  compute-bound             1x  4096^3  fp16       1   1.4852    92.5              77.1  67.8          14.9           100.7
+  compute-bound             1x  8192^3  fp16       1  16.0909    68.3              56.9  25.0           5.5           402.7
+  compute-bound             4x  4096^3  fp16       4   6.1322    89.7              74.7  65.7          14.4           402.7
+  compute-bound             8x  4096^3  fp16       8  12.3899    88.7              74.0  65.0          14.3           805.3
+  compute-bound             16x 2048^3  fp16      16   3.0374    90.5              75.4 132.6          29.1           402.7
+  compute-bound             8x  8192^3  fp16       8 127.4570    69.0              57.5  25.3           5.5          3221.2
+bandwidth-bound  wr 1x 16384x16384x128  bf16       1   3.0608    22.5              18.7 178.1          39.1           545.3
+bandwidth-bound  wr 8x  8192x 8192x 64  bf16       8   6.3074    10.9               9.1 172.9          37.9          1090.5
+bandwidth-bound  wr 16x 8192x 8192x 32  bf16      16  12.2812     5.6               4.7 176.2          38.6          2164.3
+bandwidth-bound st 8x  8192x 1024x4096  bf16       8   5.7261    96.0              80.0 128.9          28.3           738.2
+bandwidth-bound st 16x 8192x  512x4096  bf16      16   5.9422    92.5              77.1 214.6          47.1          1275.1
+bandwidth-bound st 32x 4096x  256x4096  bf16      32   3.4945    78.7              65.6 345.7          75.8          1208.0
+bandwidth-bound  wr 1x 16384x16384x128  fp16       1   3.2256    21.3              17.8 169.0          37.1           545.3
+bandwidth-bound  wr 8x  8192x 8192x 64  fp16       8   6.2700    11.0               9.1 173.9          38.1          1090.5
+bandwidth-bound  wr 16x 8192x 8192x 32  fp16      16  12.6618     5.4               4.5 170.9          37.5          2164.3
+bandwidth-bound st 8x  8192x 1024x4096  fp16       8   5.6056    98.1              81.7 131.7          28.9           738.2
+bandwidth-bound st 16x 8192x  512x4096  fp16      16   5.7602    95.4              79.5 221.4          48.5          1275.1
+bandwidth-bound st 32x 4096x  256x4096  fp16      32   3.3727    81.5              67.9 358.2          78.5          1208.0
+
+------------------------------------------------------------------------------------------------------------------------
+[bf16] peak compute = 92.3 TFLOP/s (77% of ~120)   |   peak bandwidth = 345.7 GB/s (76% of 456)
+[fp16] peak compute = 92.5 TFLOP/s (77% of ~120)   |   peak bandwidth = 358.2 GB/s (78% of 456)

@@ -1,0 +1,73 @@
+[lora-a] case 0 bf16: groups=4 gemm=0.1716ms lora=0.2488ms overhead=0.0771ms (31.0%) | bw gemm=100.0 lora=69.0 GB/s (17.2 MB)
+[lora-a] case 0 fp16: groups=4 gemm=0.1074ms lora=0.2564ms overhead=0.1490ms (58.1%) | bw gemm=159.8 lora=67.0 GB/s (17.2 MB)
+[lora-a] case 1 bf16: groups=8 gemm=0.4001ms lora=0.5435ms overhead=0.1434ms (26.4%) | bw gemm=132.0 lora=97.2 GB/s (52.8 MB)
+[lora-a] case 1 fp16: groups=8 gemm=0.4005ms lora=0.5527ms overhead=0.1522ms (27.5%) | bw gemm=131.9 lora=95.6 GB/s (52.8 MB)
+[lora-a] case 2 bf16: groups=8 gemm=0.3709ms lora=0.5146ms overhead=0.1438ms (27.9%) | bw gemm=195.1 lora=140.6 GB/s (72.4 MB)
+[lora-a] case 2 fp16: groups=8 gemm=0.3713ms lora=0.5223ms overhead=0.1511ms (28.9%) | bw gemm=194.9 lora=138.5 GB/s (72.4 MB)
+[lora-a] case 3 bf16: groups=16 gemm=0.5808ms lora=0.7307ms overhead=0.1498ms (20.5%) | bw gemm=186.2 lora=148.0 GB/s (108.1 MB)
+[lora-a] case 3 fp16: groups=16 gemm=0.5814ms lora=0.7428ms overhead=0.1614ms (21.7%) | bw gemm=186.0 lora=145.6 GB/s (108.1 MB)
+[lora-a] case 4 bf16: groups=16 gemm=0.9911ms lora=1.1442ms overhead=0.1530ms (13.4%) | bw gemm=175.6 lora=152.1 GB/s (174.1 MB)
+[lora-a] case 4 fp16: groups=16 gemm=0.9921ms lora=1.1497ms overhead=0.1576ms (13.7%) | bw gemm=175.5 lora=151.4 GB/s (174.1 MB)
+[lora-a] case 5 bf16: groups=32 gemm=0.7023ms lora=0.8726ms overhead=0.1703ms (19.5%) | bw gemm=343.4 lora=276.4 GB/s (241.2 MB)
+[lora-a] case 5 fp16: groups=32 gemm=0.7006ms lora=0.8776ms overhead=0.1770ms (20.2%) | bw gemm=344.2 lora=274.8 GB/s (241.2 MB)
+[lora-a] case 6 bf16: groups=32 gemm=2.8400ms lora=3.0082ms overhead=0.1681ms (5.6%) | bw gemm=192.4 lora=181.6 GB/s (546.3 MB)
+[lora-a] case 6 fp16: groups=32 gemm=2.8405ms lora=3.0141ms overhead=0.1736ms (5.8%) | bw gemm=192.3 lora=181.2 GB/s (546.3 MB)
+[lora-a] case 7 bf16: groups=64 gemm=1.7038ms lora=1.9079ms overhead=0.2041ms (10.7%) | bw gemm=271.4 lora=242.4 GB/s (462.4 MB)
+[lora-a] case 7 fp16: groups=64 gemm=1.7066ms lora=1.9145ms overhead=0.2079ms (10.9%) | bw gemm=271.0 lora=241.5 GB/s (462.4 MB)
+[lora-a] case 8 bf16: groups=64 gemm=2.9789ms lora=3.1809ms overhead=0.2020ms (6.4%) | bw gemm=242.2 lora=226.8 GB/s (721.4 MB)
+[lora-a] case 8 fp16: groups=64 gemm=2.9816ms lora=3.1897ms overhead=0.2081ms (6.5%) | bw gemm=242.0 lora=226.2 GB/s (721.4 MB)
+[lora-a] case 9 bf16: groups=128 gemm=8.3903ms lora=8.6540ms overhead=0.2637ms (3.0%) | bw gemm=168.6 lora=163.5 GB/s (1414.5 MB)
+[lora-a] case 9 fp16: groups=128 gemm=8.3940ms lora=8.6636ms overhead=0.2696ms (3.1%) | bw gemm=168.5 lora=163.3 GB/s (1414.5 MB)
+[lora-a] case 10 bf16: groups=128 gemm=3.9993ms lora=4.2686ms overhead=0.2693ms (6.3%) | bw gemm=211.3 lora=198.0 GB/s (845.2 MB)
+[lora-a] case 10 fp16: groups=128 gemm=4.0038ms lora=4.2692ms overhead=0.2654ms (6.2%) | bw gemm=211.1 lora=198.0 GB/s (845.2 MB)
+[lora-a] case 11 bf16: groups=256 gemm=8.3038ms lora=8.2747ms overhead=-0.0291ms (-0.4%) | bw gemm=345.1 lora=346.3 GB/s (2865.8 MB)
+[lora-a] case 11 fp16: groups=256 gemm=7.6730ms lora=8.5452ms overhead=0.8722ms (10.2%) | bw gemm=373.5 lora=335.4 GB/s (2865.8 MB)
+
+================================================================================================================================
+Group-GEMM vs sgemm_lora_a_fwd (metadata overhead)
+================================================================================================================================
+
+Per-case (gemm_ms = pure group-GEMM API; lora_ms = full LoRA kernel):
+ case_id                                    case_label dtype  groups  gemm_ms  lora_ms  overhead_ms  overhead_pct  overhead_us_per_group  gemm_tflops  lora_tflops  total_bytes_mb  gemm_gbs  lora_gbs
+       0     tok=4096,seg=4,lora=2,r=16,K=2048,stack=1  bf16       4   0.1716   0.2488       0.0771          31.0                  19.29          1.6          1.1            17.2     100.0      69.0
+       0     tok=4096,seg=4,lora=2,r=16,K=2048,stack=1  fp16       4   0.1074   0.2564       0.1490          58.1                  37.25          2.5          1.0            17.2     159.8      67.0
+       1     tok=6144,seg=8,lora=4,r=32,K=4096,stack=1  bf16       8   0.4001   0.5435       0.1434          26.4                  17.92          4.0          3.0            52.8     132.0      97.2
+       1     tok=6144,seg=8,lora=4,r=32,K=4096,stack=1  fp16       8   0.4005   0.5527       0.1522          27.5                  19.02          4.0          2.9            52.8     131.9      95.6
+       2     tok=8192,seg=8,lora=4,r=64,K=4096,stack=1  bf16       8   0.3709   0.5146       0.1438          27.9                  17.97         11.6          8.3            72.4     195.1     140.6
+       2     tok=8192,seg=8,lora=4,r=64,K=4096,stack=1  fp16       8   0.3713   0.5223       0.1511          28.9                  18.88         11.6          8.2            72.4     194.9     138.5
+       3   tok=12288,seg=16,lora=2,r=16,K=4096,stack=3  bf16      16   0.5808   0.7307       0.1498          20.5                   9.36          8.3          6.6           108.1     186.2     148.0
+       3   tok=12288,seg=16,lora=2,r=16,K=4096,stack=3  fp16      16   0.5814   0.7428       0.1614          21.7                  10.08          8.3          6.5           108.1     186.0     145.6
+       4   tok=16384,seg=16,lora=4,r=32,K=5120,stack=1  bf16      16   0.9911   1.1442       0.1530          13.4                   9.56          5.4          4.7           174.1     175.6     152.1
+       4   tok=16384,seg=16,lora=4,r=32,K=5120,stack=1  fp16      16   0.9921   1.1497       0.1576          13.7                   9.85          5.4          4.7           174.1     175.5     151.4
+       5   tok=24576,seg=32,lora=8,r=64,K=4096,stack=2  bf16      32   0.7023   0.8726       0.1703          19.5                   5.32         36.7         29.5           241.2     343.4     276.4
+       5   tok=24576,seg=32,lora=8,r=64,K=4096,stack=2  fp16      32   0.7006   0.8776       0.1770          20.2                   5.53         36.8         29.4           241.2     344.2     274.8
+       6   tok=32768,seg=32,lora=4,r=16,K=8192,stack=1  bf16      32   2.8400   3.0082       0.1681           5.6                   5.25          3.0          2.9           546.3     192.4     181.6
+       6   tok=32768,seg=32,lora=4,r=16,K=8192,stack=1  fp16      32   2.8405   3.0141       0.1736           5.8                   5.43          3.0          2.8           546.3     192.3     181.2
+       7   tok=49152,seg=64,lora=8,r=32,K=4096,stack=3  bf16      64   1.7038   1.9079       0.2041          10.7                   3.19         22.7         20.3           462.4     271.4     242.4
+       7   tok=49152,seg=64,lora=8,r=32,K=4096,stack=3  fp16      64   1.7066   1.9145       0.2079          10.9                   3.25         22.7         20.2           462.4     271.0     241.5
+       8   tok=65536,seg=64,lora=4,r=64,K=5120,stack=1  bf16      64   2.9789   3.1809       0.2020           6.4                   3.16         14.4         13.5           721.4     242.2     226.8
+       8   tok=65536,seg=64,lora=4,r=64,K=5120,stack=1  fp16      64   2.9816   3.1897       0.2081           6.5                   3.25         14.4         13.5           721.4     242.0     226.2
+       9  tok=81920,seg=128,lora=8,r=16,K=8192,stack=2  bf16     128   8.3903   8.6540       0.2637           3.0                   2.06          5.1          5.0          1414.5     168.6     163.5
+       9  tok=81920,seg=128,lora=8,r=16,K=8192,stack=2  fp16     128   8.3940   8.6636       0.2696           3.1                   2.11          5.1          5.0          1414.5     168.5     163.3
+      10  tok=98304,seg=128,lora=4,r=32,K=4096,stack=1  bf16     128   3.9993   4.2686       0.2693           6.3                   2.10          6.4          6.0           845.2     211.3     198.0
+      10  tok=98304,seg=128,lora=4,r=32,K=4096,stack=1  fp16     128   4.0038   4.2692       0.2654           6.2                   2.07          6.4          6.0           845.2     211.1     198.0
+      11 tok=122880,seg=256,lora=8,r=64,K=8192,stack=3  bf16     256   8.3038   8.2747      -0.0291          -0.4                  -0.11         46.6         46.7          2865.8     345.1     346.3
+      11 tok=122880,seg=256,lora=8,r=64,K=8192,stack=3  fp16     256   7.6730   8.5452       0.8722          10.2                   3.41         50.4         45.2          2865.8     373.5     335.4
+
+--------------------------------------------------------------------------------------------------------------------------------
+Overhead summary by dtype (overhead = metadata build + arg setup + output alloc)
+--------------------------------------------------------------------------------------------------------------------------------
+        gemm_ms                   lora_ms                 overhead_ms                 overhead_pct            overhead_us_per_group             
+           mean     min     max      mean     min     max        mean     min     max         mean  min   max                  mean   min    max
+dtype                                                                                                                                           
+bf16   2.619408  0.1716  8.3903  2.779058  0.2488  8.6540    0.159625 -0.0291  0.2693    14.191667 -0.4  31.0              7.922500 -0.11  19.29
+fp16   2.562733  0.1074  8.3940  2.808150  0.2564  8.6636    0.245425  0.1490  0.8722    17.733333  3.1  58.1             10.010833  2.07  37.25
+
+--------------------------------------------------------------------------------------------------------------------------------
+Bandwidth summary by dtype (total_bytes = read x + read weight + write output, per group)
+--------------------------------------------------------------------------------------------------------------------------------
+         gemm_gbs               lora_gbs              total_bytes_mb              
+             mean    min    max     mean   min    max           mean   min     max
+dtype                                                                             
+bf16   213.608333  100.0  345.1  186.825  69.0  346.3     626.783333  17.2  2865.8
+fp16   220.891667  131.9  373.5  184.875  67.0  335.4     626.783333  17.2  2865.8
