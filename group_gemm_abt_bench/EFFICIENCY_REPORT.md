@@ -1,7 +1,8 @@
 # Are the LoRA forward kernels using the group-GEMM API efficiently?
 
 **Device:** Intel Arc B580 (BMG-g21) — 20 Xe2 cores, 12 GB GDDR6, 192-bit bus.
-**Kernels under test:** `sgemm_lora_a_fwd`, `sgemm_lora_b_fwd`, `qkv_lora_b_fwd`.
+**Kernels under test:** `sgemm_lora_a_fwd`, `sgemm_lora_b_fwd`, `qkv_lora_b_fwd`,
+`gate_up_lora_b_fwd`.
 **Question:** each kernel calls the CUTLASS pointer-array grouped-GEMM API, but first
 builds all of the grouped-GEMM metadata *on device, on every launch*
 (`grouped_gemm_meta.hpp`: per-group problem sizes, strides, byte offsets, absolute
@@ -16,6 +17,7 @@ leaving performance on the table versus what the group-GEMM API can actually do?
 |--------|-------------------------------------------------------|---------------------------|
 | `sgemm_lora_a_fwd` | ~0.08–0.27 ms/call, near-constant. 3–6 % on the large cases, 20–31 % only where the GEMM itself is sub-0.5 ms. | **Yes.** Large cases run within a few % of the raw group-GEMM floor. |
 | `sgemm_lora_b_fwd` | ~0.18–0.9 ms/call, 3–11 %. | **Yes.** These cases are all ≥64k tokens, so the fixed cost is a small share throughout. |
+| `gate_up_lora_b_fwd` | ~0.4–4.4 ms/call, **5–36 %**, shape-dependent. | **Mostly.** 2 bands (gate, up), so a milder version of qkv: 5–10 % on many-group launches, but the same launch-bound spike (36 %) on the few-group case. |
 | `qkv_lora_b_fwd` | ~0.4–5.2 ms/call, **5–43 %**, highly shape-dependent. | **Partially.** Efficient when there are many groups to amortize over; the fixed metadata/band cost is disproportionate on few-group launches. **This is the optimization target.** |
 
 Two distinct efficiency questions, both answered "the shapes, not the API":
@@ -128,6 +130,31 @@ Every case is ≥64k tokens, so the GEMM is always several ms.
 
 **Verdict:** efficient; the fixed cost is a single-digit-percent share on every case.
 
+### `gate_up_lora_b_fwd` — mostly efficient, same launch-bound caveat as qkv ⚠️
+
+Each segment emits **two** groups (the gate and up projections, both width `output_dim`):
+`(seg_len, output_dim, rank)` ×2, per-group α, β=1 for `use_base_output`. Same `tall`
+(32×512×32) tile and shared sliced metadata build as qkv (`n_slices = 2 + output_offset`),
+so it is a lighter, 2-band version of the qkv story.
+
+- Overhead **0.4–4.4 ms**, **5–36 %**; per-group 4–142 µs. Mean ~11–12 % (vs qkv's ~16 %).
+- Split by group count, exactly like qkv:
+  - **Few-group launch is punished:** case 0 (16 groups, seg=8) pays 2.27 ms = **36 %**
+    (142 µs/group); `lora_gbs` drops to ~131 GB/s while the pure floor is ~206 GB/s.
+  - **Many-group launches amortize:** cases 2–6 (64–512 groups) settle to **5–10 %**
+    (4–8 µs/group); case 6 (512 groups) is within noise of the floor (~0 %), with
+    `lora_gbs` ≈ `gemm_gbs` ≈ 199 GB/s.
+  - `+base` cases (7–9) add 1.1–4.4 ms and show the same β=1 traffic drop (`gemm_gbs`
+    ~130–145 vs ~200) — inherent to the fused residual, not overhead.
+- Pure floor bandwidth is a steady **~193–206 GB/s** (like qkv; the wide gate/up bands
+  make it a touch higher than B-fwd), so the API handles these shapes well; the gap to
+  `lora_gbs` is the 2-band metadata + band-partitioning wrapper.
+
+**Verdict:** efficient on realistic many-group launches; carries the same
+few-group launch-bound spike as qkv but one band lighter (2 vs 3 → worst case ~36 % vs
+~43 %). It benefits from the **same** fix as qkv — cheaper/amortized on-device metadata
+across the gate/up bands.
+
 ### `qkv_lora_b_fwd` — the optimization target ⚠️
 
 Each segment emits **three** groups (q, k, v bands): `(seg_len, {n_q|n_kv|n_kv}, rank)`,
@@ -168,9 +195,12 @@ of three.
 - **`sgemm_lora_a_fwd` and `sgemm_lora_b_fwd` are efficient consumers of the API:** the
   on-device metadata build is a small, roughly constant tax, only material when the GEMM
   itself is sub-millisecond (few tokens / small dims).
-- **`qkv_lora_b_fwd` is the one to optimize:** its 3-band metadata and output-offset
-  partitioning make the fixed per-launch cost up to ~40 % of the call on few-group
-  shapes. Reducing or amortizing that build is the highest-value follow-up.
+- **The multi-band B kernels (`qkv`, `gate_up`) share one weakness:** their per-band
+  metadata + output-offset partitioning make the fixed per-launch cost disproportionate
+  on few-group launches — up to ~43 % (qkv, 3 bands) / ~36 % (gate_up, 2 bands). Both
+  amortize to single-digit % once there are enough groups. **`qkv_lora_b_fwd` is the
+  highest-value target** (most bands, largest spike); the same fix — cheaper or amortized
+  on-device metadata across the bands — applies to `gate_up_lora_b_fwd` too.
 
 ---
 
@@ -183,6 +213,7 @@ cd group_gemm_abt_bench && ./build.sh          # builds bmg_grouped_gemm_abt (ne
 python bench_group_gemm_sgemm_lora_a.py        # per-case overhead + bandwidth vs LoRA-A
 python bench_group_gemm_sgemm_lora_b.py        # ... LoRA-B
 python bench_group_gemm_qkv_lora_b.py          # ... qkv-B
+python bench_group_gemm_gate_up_lora_b.py      # ... gate/up-B
 python bench_group_gemm_peak.py                # group-GEMM max capacity (the ceilings above)
 ```
 

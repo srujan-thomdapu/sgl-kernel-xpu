@@ -16,9 +16,10 @@ grouped-GEMM metadata on device every call.
 | `bench_group_gemm_sgemm_lora_a.py` | Driver mirroring `benchmark/bench_sgemm_lora_a_fwd.py`. |
 | `bench_group_gemm_sgemm_lora_b.py` | Driver mirroring `benchmark/bench_sgemm_lora_b_fwd.py`. |
 | `bench_group_gemm_qkv_lora_b.py` | Driver mirroring `benchmark/bench_qkv_lora_b_fwd.py`. |
+| `bench_group_gemm_gate_up_lora_b.py` | Driver mirroring `benchmark/bench_gate_up_lora_b_fwd.py`. |
 | `bench_group_gemm_peak.py` | Max-capacity benchmark: same kernel on large tile-aligned shapes to find the peak TFLOP/s and GB/s (the ceiling the LoRA numbers are read against). |
 | `EFFICIENCY_REPORT.md` | **Team-facing writeup**: does each LoRA kernel use the group-GEMM API efficiently? Verdict + per-kernel analysis + peak ceilings. Start here. |
-| `results/` | Saved run logs (`lora_a.txt`, `lora_b.txt`, `qkv_b.txt`, `peak.txt`). |
+| `results/` | Saved run logs (`lora_a.txt`, `lora_b.txt`, `qkv_b.txt`, `gate_up_b.txt`, `peak.txt`). |
 
 ## The A @ Bᵀ adjustment
 
@@ -42,9 +43,10 @@ compute:
 | `sgemm_lora_a_fwd` | 1 | `(seg_len, stack_num·max_rank, input_dim)` | β=0, single α=1 (no per-adapter scaling) |
 | `sgemm_lora_b_fwd` | 1 | `(seg_len, output_dim, max_rank)` | per-group α (scalings); β=1 iff `use_base_output` |
 | `qkv_lora_b_fwd` | 3 (q, k, v) | `(seg_len, {n_q|n_kv|n_kv}, max_rank)` | per-group α; β=1 iff `use_base_output` |
+| `gate_up_lora_b_fwd` | 2 (gate, up) | `(seg_len, output_dim, max_rank)` | per-group α; β=1 iff `use_base_output` |
 
 Tile config matches the per-kernel `*_types.hpp`: `large` (256×256×32) for A-/B-fwd,
-`tall` (32×512×32) for qkv-b-fwd.
+`tall` (32×512×32) for qkv- and gate/up-b-fwd.
 
 ## Building
 
@@ -66,6 +68,7 @@ source /home/gta/intel/oneapi/setvars.sh
 python bench_group_gemm_sgemm_lora_a.py      # all cases, bf16 + fp16
 python bench_group_gemm_sgemm_lora_b.py
 python bench_group_gemm_qkv_lora_b.py
+python bench_group_gemm_gate_up_lora_b.py
 python bench_group_gemm_peak.py              # max-capacity ceiling (no LoRA module needed)
 # options: --cases 0 2 5   --dtypes bf16   --iterations 300   --verify
 ```
@@ -149,10 +152,14 @@ group count. It therefore dominates small problems and fades on large ones:
   band partitioning. The worst cases (case 0 ≈ 43 %, case 2 ≈ 36 %) share
   `n_kv=1024` with few tokens per group, i.e. a launch-bound regime where the
   fixed build cost is a large share; the compute-heavier cases settle to ~5–13 %.
+- **`gate_up_lora_b_fwd`:** overhead ≈ 0.4–4.4 ms/call, ≈ 5–36 % of total — a
+  milder, 2-band version of qkv (each segment emits **two** groups, gate + up).
+  The few-group case (case 0, 16 groups) spikes to ~36 %; the many-group cases
+  (64–512 groups) amortize to ~5–10 % and the largest reaches the floor.
 
 **Bandwidth.** These kernels are memory-bound, so bandwidth tracks the timing
 directly. The pure group-GEMM floor sustains ~185–195 GB/s (B-fwd), ~200–207
-GB/s (qkv), and up to ~345–373 GB/s on the largest A-fwd cases; the full LoRA
+GB/s (qkv), ~193–206 GB/s (gate/up), and up to ~345–373 GB/s on the largest A-fwd cases; the full LoRA
 kernel runs ~10–35 % lower `lora_gbs` on the launch-bound cases (the metadata
 build eats into effective bandwidth) and converges to within a few percent of
 the floor on the large, compute-heavier cases — the same pattern as the overhead
@@ -162,8 +169,11 @@ Takeaway: `sgemm_lora_a_fwd` / `sgemm_lora_b_fwd` are efficient consumers of the
 group-GEMM API — the on-device metadata build is a small, roughly constant tax
 that is only material in the launch-bound regime (few tokens / small hidden
 dims); their large, compute-heavier cases run within a few percent of the raw
-group-GEMM floor. `qkv_lora_b_fwd` pays a distinctly higher and more variable
-tax (up to ~40 %) because of its 3-band metadata, and is the strongest candidate
-for overhead reduction (e.g. cheaper on-device metadata construction, or fusing
-the three bands). Numbers on the sub-percent margin (largest A-/B-fwd kernels)
+group-GEMM floor. The multi-band B kernels `qkv_lora_b_fwd` (3 bands, up to ~43 %)
+and `gate_up_lora_b_fwd` (2 bands, up to ~36 %) pay a distinctly higher and more
+variable tax because of their per-band metadata + `output_offset` partitioning;
+both amortize to single-digit % once there are enough groups. `qkv_lora_b_fwd` is
+the strongest candidate for overhead reduction (most bands, largest spike), with
+the same fix — cheaper/amortized on-device metadata across bands — applying to
+`gate_up_lora_b_fwd`. Numbers on the sub-percent margin (largest A-/B-fwd kernels)
 are within run-to-run wall-clock noise and occasionally read slightly negative.
